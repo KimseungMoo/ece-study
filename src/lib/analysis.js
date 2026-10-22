@@ -1,3 +1,5 @@
+import { similarOldIds } from './question.js';
+
 const BAD = new Set(['wrong', 'unsure']);
 
 export function lastAttemptByQuestion(attempts) {
@@ -78,7 +80,9 @@ function lastResultForTopic(questions, last, topic) {
 
 export function wrongNoteItems(questions, attempts, memos, mastered) {
   const { last } = analyzeAttempts(questions, attempts);
+  const qmap = new Map(questions.map((q) => [q.id, q]));
   const groups = new Map();
+  const listed = new Set();
   for (const q of questions) {
     if (mastered?.[q.id]) continue;
     const a = last.get(q.id);
@@ -90,6 +94,26 @@ export function wrongNoteItems(questions, attempts, memos, mastered) {
       attempt: a,
       memo: memos?.[q.id] || '',
     });
+    listed.add(q.id);
+  }
+  for (const q of questions) {
+    const a = last.get(q.id);
+    if (!a || !BAD.has(a.result)) continue;
+    const topic = q.topic || '미분류';
+    for (const id of similarOldIds(q)) {
+      if (listed.has(id) || mastered?.[id]) continue;
+      const t = qmap.get(id);
+      if (!t) continue;
+      if (!groups.has(topic)) groups.set(topic, { topic, subject: q.subject, exam: q.exam, items: [] });
+      groups.get(topic).items.push({
+        question: t,
+        attempt: a,
+        memo: memos?.[t.id] || '',
+        similar: true,
+        relatedFrom: q.id,
+      });
+      listed.add(id);
+    }
   }
   const list = [...groups.values()].sort((a, b) => b.items.length - a.items.length);
   for (const g of list) g.items.sort((a, b) => b.attempt.at - a.attempt.at);

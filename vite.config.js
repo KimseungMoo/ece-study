@@ -59,10 +59,29 @@ export default defineConfig({
       },
       devOptions: { enabled: false },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,woff,woff2,ttf,png,svg,json,bin}'],
-        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,html,woff,woff2,ttf,png,svg}'],
+        globIgnores: ['**/data/**'],
         navigateFallback: `${BASE}index.html`,
         navigateFallbackDenylist: [/^\/ece-study\/data\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith(`${BASE}data/`) && !/\/img-\d+\.bin$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'ece-data-core',
+              expiration: { maxEntries: 8 },
+            },
+          },
+          {
+            urlPattern: ({ url }) => /\/ece-study\/data\/img-\d+\.bin$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'ece-img-chunks',
+              expiration: { maxEntries: 12, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
       },
     }),
   ],

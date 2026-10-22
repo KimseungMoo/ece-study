@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "ECE_DATA=sample playwright test",
+    "verify:data": "node scripts/verify_node.mjs",
     "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {

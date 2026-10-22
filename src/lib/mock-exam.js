@@ -1,4 +1,5 @@
 import { lastAttemptByQuestion } from './analysis.js';
+import { similarOldIds } from './question.js';
 
 const DAY = 86_400_000;
 
@@ -90,16 +91,33 @@ export function selectMockExam(questions, attempts, opts = {}) {
     return gap * missBoost * weakBoost;
   };
 
+  const similarIds = new Set();
+  for (const a of attempts) {
+    if (a.result !== 'wrong' && a.result !== 'unsure') continue;
+    const q = qmap.get(a.questionId);
+    if (!q) continue;
+    for (const id of similarOldIds(q)) similarIds.add(id);
+  }
+
   const weakPool = candidates.filter((q) => weakTopics.has(q.topic || '미분류'));
+  const similarPool = candidates.filter(
+    (q) => similarIds.has(q.id) && !weakTopics.has(q.topic || '미분류'),
+  );
   const keywordPool = candidates.filter(
-    (q) => !weakTopics.has(q.topic || '미분류') && sharesKeyword(q, weakKeywords),
+    (q) =>
+      !weakTopics.has(q.topic || '미분류') &&
+      !similarIds.has(q.id) &&
+      sharesKeyword(q, weakKeywords),
   );
   const restPool = candidates.filter(
-    (q) => !weakTopics.has(q.topic || '미분류') && !sharesKeyword(q, weakKeywords),
+    (q) =>
+      !weakTopics.has(q.topic || '미분류') &&
+      !similarIds.has(q.id) &&
+      !sharesKeyword(q, weakKeywords),
   );
 
   const picked = [];
-  for (const pool of [weakPool, keywordPool, restPool]) {
+  for (const pool of [weakPool, similarPool, keywordPool, restPool]) {
     if (picked.length >= size) break;
     picked.push(...pickWeighted(pool, weightOf, rng, size - picked.length));
   }

@@ -1,7 +1,10 @@
-/** Per-subject % plus 과락(<40) / 합격(avg>=60 and no 과락). Subject list comes from the session. */
+import { isUnscored } from './question.js';
+
+/** Per-subject % plus 과락(<40) / 합격(avg>=60 and no 과락). Null-answer items are excluded. */
 export function scoreExam(questions, grades) {
   const bySubject = new Map();
   for (const q of questions) {
+    if (isUnscored(q)) continue;
     const sub = q.subject || '기타';
     if (!bySubject.has(sub)) bySubject.set(sub, { subject: sub, total: 0, correct: 0, points: 0, pointsMax: 0 });
     const row = bySubject.get(sub);
