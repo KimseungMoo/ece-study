@@ -33,9 +33,13 @@ test('unlock sample and capture iPad screens', async ({ page }) => {
   await expect(page.getByTestId('year-exam-screen')).toBeVisible();
   await page.getByTestId('session-start').click();
   await expect(page.getByTestId('play-screen')).toBeVisible();
+  await expect(page.locator('.paper')).toBeVisible();
   await expect(page.locator('.katex').first()).toBeVisible();
+  await page.getByTestId('choice-1').click();
+  await expect(page.getByTestId('choice-1')).toHaveClass(/picked/);
   await shot(page, '02-year-exam');
   await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.getByTestId('omr-sheet')).toBeVisible();
   await shot(page, '02b-year-exam-landscape');
   await page.setViewportSize({ width: 768, height: 1024 });
 
@@ -53,7 +57,9 @@ test('unlock sample and capture iPad screens', async ({ page }) => {
   await shot(page, '03-analysis');
 
   await page.getByTestId('nav-study').click();
-  await page.getByTestId('open-wrong').click();
+  await page.evaluate(() => {
+    location.hash = '#/study/wrong';
+  });
   await expect(page.getByTestId('wrong-screen')).toBeVisible();
   await expect(page.getByTestId('wrong-screen')).toContainText('복습 필요 영역');
   await shot(page, '04-wrong-note');

@@ -20,7 +20,7 @@ import {
   saveSettings,
 } from '../lib/store.js';
 import { checkPassphrase, decryptData, deriveKey } from '../crypto/ece-decrypt.mjs';
-import { choicesHtml, explainHtml, hydrateQuestion, kecBits, stemHtml } from './question-view.js';
+import { explainHtml, hydrateQuestion, kecBits, markBarHtml, omrHtml, paperHtml, stemHtml } from './question-view.js';
 import { esc } from '../lib/render.js';
 
 const DATA_BASE = `${import.meta.env.BASE_URL}data/`;
@@ -458,62 +458,34 @@ function viewPlay() {
   const reveal =
     sess.revealed[q.id] || (sess.immediate && sess.grades[q.id] && q.exam === '필기');
   const self = q.exam === '실기' || q.answer == null || q.format !== 'mcq';
-  const nums = sess.questions
-    .map((item, i) => {
-      const g = sess.grades[item.id];
-      let cls = i === sess.index ? 'on' : '';
-      if (g === 'correct') cls += ' ok';
-      else if (g === 'wrong') cls += ' ng';
-      else if (g === 'unsure') cls += ' mid';
-      else if (sess.answers[item.id] != null || sess.revealed[item.id]) cls += ' did';
-      return `<button type="button" class="${cls.trim()}" data-act="jump" data-i="${i}">${i + 1}</button>`;
-    })
-    .join('');
-  const body = `<div class="card">
-      <div class="play-head">
-        <div><b>${sess.index + 1}</b> / ${sess.questions.length}
-          <span class="muted"> · ${esc(q.subject || '')} · ${esc(q.topic || '')}</span>
-        </div>
-        ${
-          sess.timerOn && sess.remain != null
-            ? `<div class="timer" data-testid="timer">${fmtTime(sess.remain)}</div>`
-            : ''
-        }
-      </div>
-      ${kecBits(q)}
-      ${stemHtml(q)}
-      ${q.choices ? choicesHtml(q, sess.answers[q.id], sess.grades[q.id], reveal && !self) : ''}
-      ${
-        self
-          ? `${
-              sess.revealed[q.id]
-                ? `${explainHtml(q)}
-                   <div class="btn-row" style="margin-top:12px">
-                     <button class="btn good" type="button" data-act="self" data-g="correct">맞음</button>
-                     <button class="btn warn" type="button" data-act="self" data-g="unsure">애매</button>
-                     <button class="btn bad" type="button" data-act="self" data-g="wrong">틀림</button>
-                   </div>`
-                : `<button class="btn" type="button" data-act="reveal" data-testid="reveal-answer">정답 · 해설 보기</button>`
-            }`
-          : `${reveal ? explainHtml(q) : ''}`
-      }
-    </div>`;
+  const timer =
+    sess.timerOn && sess.remain != null
+      ? `<span class="timer" data-testid="timer">${fmtTime(sess.remain)}</span>`
+      : '';
   return chrome(
-    `${top(sess.title, '#/exam')}
-    <div class="play-grid" data-testid="play-screen">
-      <div>${body}</div>
-      <div>
-        <div class="qnums">${nums}</div>
-        <div class="pager">
-          <button class="btn" type="button" data-act="prev" ${sess.index === 0 ? 'disabled' : ''}>이전</button>
-          <button class="btn" type="button" data-act="next" ${
-            sess.index >= sess.questions.length - 1 ? 'disabled' : ''
-          }>다음</button>
+    `<div class="exam-desk" data-testid="play-screen">
+      <div class="exam-chrome">
+        <button class="paper-link" type="button" data-go="#/exam">나가기</button>
+        <div class="exam-chrome-mid">
+          <b>${esc(sess.title)}</b>
+          <span>${sess.index + 1} / ${sess.questions.length}</span>
+          ${timer}
         </div>
-        <button class="btn primary" style="width:100%" type="button" data-act="submit" data-testid="submit-exam">채점 · 종료</button>
+        <button class="paper-link" type="button" data-act="submit" data-testid="submit-exam">채점</button>
+      </div>
+      <div class="exam-panes">
+        ${paperHtml({ session: sess, q, index: sess.index, reveal, self })}
+        ${omrHtml(sess)}
+      </div>
+      <div class="exam-dock">
+        <button class="paper-link" type="button" data-act="prev" ${sess.index === 0 ? 'disabled' : ''}>이전</button>
+        ${markBarHtml(q, sess.answers[q.id])}
+        <button class="paper-link" type="button" data-act="next" ${
+          sess.index >= sess.questions.length - 1 ? 'disabled' : ''
+        }>다음</button>
       </div>
     </div>`,
-    { tab: 'exam', hideTabs: false },
+    { hideTabs: true },
   );
 }
 
@@ -840,6 +812,11 @@ async function onAct(act, node) {
   if (act === 'jump' && state.session) {
     state.session.index = Number(node.dataset.i);
     render();
+    return;
+  }
+  if (act === 'omr' && state.session) {
+    state.session.index = Number(node.dataset.i);
+    await onChoice(Number(node.dataset.choice));
     return;
   }
   if (act === 'reveal' && state.session) {

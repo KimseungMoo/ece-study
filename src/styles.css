@@ -85,7 +85,7 @@ a { color: var(--accent); }
 
 .shell {
   min-height: 100%;
-  padding: calc(12px + var(--safe-t)) calc(16px + var(--safe-r)) calc(88px + var(--safe-b)) calc(16px + var(--safe-l));
+  padding: calc(12px + var(--safe-t)) calc(16px + var(--safe-r)) calc(108px + var(--safe-b)) calc(16px + var(--safe-l));
 }
 .shell.no-tab { padding-bottom: calc(20px + var(--safe-b)); }
 
@@ -198,6 +198,7 @@ a { color: var(--accent); }
   text-align: left;
   padding: 16px;
   box-shadow: var(--shadow);
+  scroll-margin-bottom: 96px;
 }
 .tile b { display: block; font-size: 1.05rem; margin-bottom: 4px; }
 .list-btn {
@@ -413,4 +414,237 @@ a { color: var(--accent); }
 @media (max-width: 640px) {
   .tiles { grid-template-columns: 1fr; }
   .qnums { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* Exam paper + tablet desk */
+.shell.no-tab:has(.exam-desk) {
+  padding-bottom: calc(8px + var(--safe-b));
+}
+.exam-desk {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: calc(100dvh - 20px - var(--safe-t) - var(--safe-b));
+  min-height: 0;
+  overflow: hidden;
+}
+.exam-chrome,
+.exam-dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  flex: 0 0 auto;
+}
+.exam-dock {
+  background: color-mix(in srgb, var(--bg) 92%, #fbf8f1);
+  border-top: 1px solid #d4ccbe;
+  padding: 6px 2px 2px;
+}
+.exam-chrome-mid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: baseline;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  font-size: 0.92rem;
+}
+.exam-panes {
+  display: grid;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.paper,
+.omr {
+  background: #fbf8f1;
+  color: #1a1814;
+  border: 3px double #2a2722;
+  font-family: "Apple Myungjo", "Nanum Myeongjo", Batang, "Songti SC", "Palatino Linotype", serif;
+}
+.paper {
+  padding: 18px 20px 12px;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.paper-head h2 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 1.2rem;
+  letter-spacing: 0.14em;
+}
+.paper-head table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+.paper-head th,
+.paper-head td {
+  border: 1px solid #2a2722;
+  padding: 5px 7px;
+  text-align: center;
+}
+.paper-head th { background: #f0ebe0; font-weight: 700; width: 14%; }
+.paper-subject {
+  text-align: center;
+  font-weight: 700;
+  margin: 6px 0 12px;
+}
+.paper-qno { font-weight: 700; margin-bottom: 8px; }
+.paper-tag { font-size: 0.8rem; font-weight: 600; margin-left: 6px; }
+.paper-note { font-size: 0.86rem; margin: 0 0 8px; }
+.paper-note.dim { color: #5c574e; }
+.paper-body .q-stem { font-size: 1.05rem; line-height: 1.65; }
+.paper-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.paper-choice .circ {
+  position: relative;
+  flex: 0 0 2rem;
+  width: 2rem;
+  text-align: center;
+  font-size: 1.2rem;
+  line-height: 1.55;
+}
+.paper-choice .txt { flex: 1; padding-top: 4px; }
+.paper-choice.picked { background: rgb(26 24 20 / 6%); }
+.paper-choice.picked .circ::after {
+  content: "";
+  position: absolute;
+  inset: -3px -2px;
+  border: 1.8px solid #1a1814;
+  border-radius: 50%;
+  transform: rotate(-12deg);
+}
+.paper-choice.right.picked { background: rgb(20 80 48 / 8%); }
+.paper-choice.wrong { background: rgb(140 20 20 / 7%); }
+.stamp {
+  font-style: normal;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  padding: 1px 5px;
+  margin-top: 6px;
+}
+.stamp.ok { color: #1f5c3a; }
+.stamp.ng { color: #8a1f1f; }
+.explain {
+  margin-top: 14px;
+  padding: 10px 0 0;
+  border-top: 1px solid #cfc6b6;
+  background: transparent;
+  border-radius: 0;
+}
+.explain-body { margin-top: 6px; }
+.paper-link {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: #1a1814;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 44px;
+  padding: 8px 6px;
+  font: inherit;
+  cursor: pointer;
+}
+.paper-link:disabled { opacity: 0.35; text-decoration: none; }
+.paper-grade { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.paper-stamp-btn,
+.mark-dot,
+.omr-b,
+.omr-no {
+  appearance: none;
+  background: #fbf8f1;
+  color: #1a1814;
+  border: 1px solid #2a2722;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 6px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.paper-stamp-btn.mid { border-style: dashed; }
+.paper-stamp-btn.ng { color: #8a1f1f; }
+.paper-foot { text-align: center; margin-top: 18px; letter-spacing: 0.2em; font-size: 0.9rem; }
+.mark-bar { display: flex; gap: 6px; }
+.mark-dot {
+  width: 44px;
+  border-radius: 50%;
+  padding: 0;
+}
+.mark-dot.on {
+  background: #1a1814;
+  color: #fbf8f1;
+}
+.omr {
+  padding: 12px 12px 8px;
+}
+.omr h3 {
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.12em;
+  font-size: 1rem;
+}
+.omr-cap { text-align: center; font-size: 0.8rem; margin: 4px 0 10px; color: #5c574e; }
+.omr-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 2px 4px;
+}
+.omr-row.on { background: rgb(26 24 20 / 7%); }
+.omr-no {
+  min-width: 36px;
+  padding: 0;
+  font-weight: 700;
+}
+.omr-b { border-radius: 50%; padding: 0; width: 36px; height: 36px; min-width: 36px; }
+.omr-b.fill { background: #1a1814; color: #fbf8f1; }
+.omr-self { font-size: 0.85rem; color: #5c574e; }
+
+@media (orientation: landscape) and (min-width: 900px) {
+  .exam-panes {
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.7fr);
+    align-items: start;
+  }
+  .paper { max-width: none; margin: 0; }
+  .omr { max-height: calc(100dvh - 150px); overflow: auto; }
+}
+
+@media (orientation: portrait), (max-width: 899px) {
+  .omr { max-height: none; }
+}
+
+[data-theme='dark'] .exam-desk .exam-chrome,
+[data-theme='dark'] .exam-desk .exam-dock,
+[data-theme='dark'] .exam-desk .paper-link {
+  color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .exam-desk .paper-link:not(.paper-choice) {
+    color: var(--ink);
+  }
 }
