@@ -1,0 +1,31 @@
+{
+  "format_version": 1,
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000,
+    "salt_b64": "tA70q02p+iFtBVcdUYp6bA=="
+  },
+  "cipher": "AES-GCM",
+  "key_length": 256,
+  "iv_length": 12,
+  "compression": "gzip",
+  "files": {
+    "data": "data.bin",
+    "data_size": 2152,
+    "data_sha256": "edf507c573ca42799a7d1fed610d4ecd09c4940b216730ab11d0506b15daaa5b",
+    "verify": "verify.bin",
+    "images": [
+      {
+        "name": "img-00.bin",
+        "size": 248,
+        "sha256": "dccac884d033b06fd3b0a64b472bd00571ec15b924e143191e036cfec0f7557a"
+      }
+    ]
+  },
+  "counts": {
+    "questions": 30,
+    "images": 2
+  },
+  "built_at": "2026-10-22T05:36:53Z"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "ece-study",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Personal encrypted study PWA for 전기공사산업기사",
+  "scripts": {
+    "dev": "ECE_DATA=sample vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "ECE_DATA=sample playwright test",
+    "icons": "node scripts/make-icons.mjs"
+  },
+  "dependencies": {
+    "katex": "^0.16.22"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "vite": "^7.1.7",
+    "vite-plugin-pwa": "^1.0.3",
+    "vitest": "^3.2.4"
+  }
+}
