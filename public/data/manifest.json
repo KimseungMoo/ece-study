@@ -1,0 +1,51 @@
+{
+  "format_version": 1,
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000,
+    "salt_b64": "jS45ZpUXGZ+/tJxubrSGBg=="
+  },
+  "cipher": "AES-GCM",
+  "key_length": 256,
+  "iv_length": 12,
+  "compression": "gzip",
+  "files": {
+    "data": "data.bin",
+    "data_size": 409082,
+    "data_sha256": "89f3469c3605938fdaf0e0f8c900113b015c222aa76a81d2a93e5a6a7dc34839",
+    "verify": "verify.bin",
+    "images": [
+      {
+        "name": "img-00.bin",
+        "size": 2525351,
+        "sha256": "5d4abb46cc763aa61c065f6e7482dad91d0ba1399f2e884bc22d6f0d3696364a"
+      },
+      {
+        "name": "img-01.bin",
+        "size": 2686968,
+        "sha256": "157201499bd6dec11840b479f87e8b7091ba57e92e8ca74afcb9524bb017ddfc"
+      },
+      {
+        "name": "img-02.bin",
+        "size": 2667205,
+        "sha256": "ef63b4d835fb8d56cf18f51d10e9a2bf0415e181c5cc4b1d50314c1a1a8c34b0"
+      },
+      {
+        "name": "img-03.bin",
+        "size": 2571679,
+        "sha256": "14dc3ee15a53bda15e290dfc8192c9a1472721b2ffea26cdc38ba25c23035238"
+      },
+      {
+        "name": "img-04.bin",
+        "size": 2260645,
+        "sha256": "16656b8af52d12ddfee1bcdc62bcf898acfd7d9defa5858cb6c75c98a823fcaf"
+      }
+    ]
+  },
+  "counts": {
+    "questions": 2263,
+    "images": 1044
+  },
+  "built_at": "2026-10-22T05:36:10Z"
+}
