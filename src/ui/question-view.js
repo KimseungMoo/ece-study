@@ -1,5 +1,6 @@
 import { extraImages, fillFigures, renderStem, esc } from '../lib/render.js';
 import { subjectsOf } from '../lib/catalog.js';
+import { choiceSlots, isMcqPickable, isUnscored, labelQuestion, similarOldIds } from '../lib/question.js';
 
 const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
 
@@ -40,9 +41,10 @@ export function stemHtml(q) {
 }
 
 export function choicesHtml(q, picked, grade, reveal) {
-  if (!q.choices || !q.choices.length) return '';
+  const slots = choiceSlots(q);
+  if (!slots) return '';
   return `<div class="choices" role="listbox">
-    ${q.choices
+    ${slots
       .map((c, i) => {
         const n = i + 1;
         let cls = 'paper-choice';
@@ -68,9 +70,10 @@ export function choicesHtml(q, picked, grade, reveal) {
 }
 
 export function markBarHtml(q, picked) {
-  if (!q.choices || !q.choices.length) return '';
+  const slots = choiceSlots(q);
+  if (!slots) return '';
   return `<div class="mark-bar" role="group" aria-label="답 표시">
-    ${q.choices
+    ${slots
       .map((_, i) => {
         const n = i + 1;
         return `<button type="button" class="mark-dot${picked === n ? ' on' : ''}" data-choice="${n}">${circled(n)}</button>`;
@@ -84,17 +87,19 @@ export function omrHtml(session) {
     .map((item, i) => {
       const picked = session.answers[item.id];
       const on = i === session.index;
-      const choices = item.choices && item.choices.length ? item.choices : [1, 2, 3, 4];
-      const bubbles = choices
-        .map((_, ci) => {
-          const n = ci + 1;
-          const fill = picked === n ? ' fill' : '';
-          return `<button type="button" class="omr-b${fill}" data-act="omr" data-i="${i}" data-choice="${n}">${circled(n)}</button>`;
-        })
-        .join('');
+      const slots = choiceSlots(item);
+      const bubbles = slots
+        ? slots
+            .map((_, ci) => {
+              const n = ci + 1;
+              const fill = picked === n ? ' fill' : '';
+              return `<button type="button" class="omr-b${fill}" data-act="omr" data-i="${i}" data-choice="${n}">${circled(n)}</button>`;
+            })
+            .join('')
+        : '<span class="omr-self">필답</span>';
       return `<div class="omr-row${on ? ' on' : ''}">
         <button type="button" class="omr-no" data-act="jump" data-i="${i}">${i + 1}</button>
-        ${item.choices ? bubbles : '<span class="omr-self">필답</span>'}
+        ${bubbles}
       </div>`;
     })
     .join('');
@@ -105,27 +110,76 @@ export function omrHtml(session) {
   </aside>`;
 }
 
-export function paperHtml({ session, q, index, reveal, self }) {
+export function similarOldHtml(q, allQuestions) {
+  const ids = similarOldIds(q);
+  if (!ids.length) return '';
+  const qmap = new Map((allQuestions || []).map((item) => [item.id, item]));
+  const links = ids
+    .map((id) => {
+      const t = qmap.get(id);
+      return `<button type="button" class="paper-link" data-act="open-similar" data-id="${esc(id)}">${esc(
+        t ? labelQuestion(t) : id,
+      )}</button>`;
+    })
+    .join(' · ');
+  return `<p class="paper-note" data-testid="similar-old">비슷한 옛 기출 ${links}</p>`;
+}
+
+function figureList(paths, label) {
+  if (!paths || !paths.length) return '';
+  return paths
+    .map((path) => `<figure class="q-fig" data-img="${esc(path)}"><span class="q-fig-ph">${label}</span></figure>`)
+    .join('');
+}
+
+export function explainHtml(q, allQuestions) {
+  const unscored = isUnscored(q);
+  const ans = unscored
+    ? '정답 미확인'
+    : Array.isArray(q.choices) && Number(q.answer) >= 1
+      ? `${circled(Number(q.answer))}`
+      : String(q.answer);
+  const exp = q.explanation ? renderStem(q.explanation).html : '<span class="muted">해설 없음</span>';
+  const expImgs = figureList(q.explanation_images, '해설 그림 불러오는 중');
+  const basis = q.answer_basis ? `<p class="paper-note dim">${esc(q.answer_basis)}</p>` : '';
+  const overlap = q.overlap_judgment ? `<p class="paper-note dim">${esc(q.overlap_judgment)}</p>` : '';
+  const recent = Array.isArray(q.similar_recent_prev) && q.similar_recent_prev.length
+    ? `<p class="paper-note dim">${esc(q.similar_recent_prev.join(' · '))}</p>`
+    : q.similar_recent_prev
+      ? `<p class="paper-note dim">${esc(q.similar_recent_prev)}</p>`
+      : '';
+  return `<div class="explain" data-testid="explain">
+    <b>정답</b> ${esc(ans)}
+    <div class="explain-body">${exp}</div>
+    ${expImgs}
+    ${basis}${overlap}${recent}
+    ${similarOldHtml(q, allQuestions)}
+  </div>`;
+}
+
+export function paperHtml({ session, q, index, reveal, self, allQuestions }) {
   const picked = session.answers[q.id];
   const grade = session.grades[q.id];
   const pts = q.points != null ? ` (배점 ${esc(q.points)}점)` : '';
   const restored = q.restored ? '<span class="paper-tag">가복원</span>' : '';
+  const unansweredMark = isUnscored(q) ? '<span class="paper-tag">정답 미확인</span>' : '';
+  const pickable = isMcqPickable(q);
   const body = `
-    <div class="paper-qno">${index + 1}.${pts} ${restored}</div>
+    <div class="paper-qno">${index + 1}.${pts} ${restored} ${unansweredMark}</div>
     ${kecBits(q)}
     ${stemHtml(q)}
-    ${q.choices ? choicesHtml(q, picked, grade, reveal && !self) : ''}
+    ${pickable ? choicesHtml(q, picked, grade, reveal && !self && !isUnscored(q)) : ''}
     ${
       self
         ? session.revealed[q.id]
-          ? `${explainHtml(q)}
+          ? `${explainHtml(q, allQuestions)}
              <div class="paper-grade">
                <button class="paper-stamp-btn" type="button" data-act="self" data-g="correct">맞음</button>
                <button class="paper-stamp-btn mid" type="button" data-act="self" data-g="unsure">애매</button>
                <button class="paper-stamp-btn ng" type="button" data-act="self" data-g="wrong">틀림</button>
              </div>`
           : `<button class="paper-link" type="button" data-act="reveal" data-testid="reveal-answer">정답 · 해설 보기</button>`
-        : `${reveal ? explainHtml(q) : ''}`
+        : `${reveal ? explainHtml(q, allQuestions) : similarOldHtml(q, allQuestions)}`
     }`;
   return `<article class="paper">
     <header class="paper-head">
@@ -144,20 +198,6 @@ export function paperHtml({ session, q, index, reveal, self }) {
     <div class="paper-body">${body}</div>
     <footer class="paper-foot">― ${index + 1} ―</footer>
   </article>`;
-}
-
-export function explainHtml(q) {
-  const ans =
-    q.answer == null
-      ? '원문에 정답 없음'
-      : Array.isArray(q.choices) && Number(q.answer) >= 1
-        ? `${circled(Number(q.answer))}`
-        : String(q.answer);
-  const exp = q.explanation ? renderStem(q.explanation).html : '<span class="muted">해설 없음</span>';
-  return `<div class="explain" data-testid="explain">
-    <b>정답</b> ${esc(ans)}
-    <div class="explain-body">${exp}</div>
-  </div>`;
 }
 
 export async function hydrateQuestion(root, images) {

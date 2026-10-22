@@ -100,6 +100,29 @@ describe('selectMockExam', () => {
     expect(picked.every((x) => x.exam === '필기')).toBe(true);
   });
 
+  it('pulls similar_old of missed items before keyword fill', () => {
+    const withSimilar = [
+      ...questions,
+      q({ id: 'old1', topic: '옛기출', keywords: ['무관'] }),
+      q({ id: 'old2', topic: '옛기출', keywords: ['무관'] }),
+    ];
+    const attempts = [
+      att('a1', 'wrong', 1),
+      att('a2', 'wrong', 1),
+      att('a3', 'wrong', 1),
+    ];
+    withSimilar[0] = { ...withSimilar[0], similar_old: ['old1', 'old2'] };
+    const picked = selectMockExam(withSimilar, attempts, {
+      size: 6,
+      now,
+      rng: () => 0,
+    });
+    const ids = picked.map((x) => x.id);
+    expect(ids).toContain('old1');
+    expect(ids).toContain('old2');
+    expect(ids.indexOf('old1')).toBeLessThan(ids.indexOf('c1'));
+  });
+
   it('skips mastered questions', () => {
     const picked = selectMockExam(questions, [att('a1', 'wrong', 1)], {
       size: 20,
@@ -121,6 +144,18 @@ describe('analysis helpers', () => {
     const notes = wrongNoteItems(questions, attempts, { a1: '다시' }, {});
     expect(notes[0].topic).toBe('약한주제');
     expect(notes[0].items).toHaveLength(2);
+  });
+
+  it('adds similar_old questions into 오답노트 review', () => {
+    const qs = [
+      q({ id: 'n1', topic: '약한주제', similar_old: ['oldA'] }),
+      q({ id: 'oldA', topic: '옛기출', number: 9 }),
+    ];
+    const notes = wrongNoteItems(qs, [att('n1', 'wrong', 1)], {}, {});
+    const ids = notes.flatMap((g) => g.items.map((it) => it.question.id));
+    expect(ids).toContain('n1');
+    expect(ids).toContain('oldA');
+    expect(notes[0].items.find((it) => it.question.id === 'oldA').similar).toBe(true);
   });
 });
 
@@ -152,5 +187,21 @@ describe('scoreExam', () => {
     expect(fail.subjects.find((s) => s.subject === '전력공학').fail).toBe(true);
     expect(fail.anyFail).toBe(true);
     expect(fail.pass).toBe(false);
+  });
+
+  it('excludes null-answer items from scoring totals', () => {
+    const qs = [
+      q({ id: 'p0', subject: '전력공학' }),
+      q({ id: 'p1', subject: '전력공학' }),
+      q({ id: 'u1', subject: '전력공학', answer: null }),
+      q({ id: 'c0', subject: '회로이론' }),
+      q({ id: 'c1', subject: '회로이론' }),
+    ];
+    const grades = { p0: 'correct', p1: 'correct', u1: 'correct', c0: 'correct', c1: 'wrong' };
+    const scored = scoreExam(qs, grades);
+    const power = scored.subjects.find((s) => s.subject === '전력공학');
+    expect(power.total).toBe(2);
+    expect(power.correct).toBe(2);
+    expect(scored.subjects.find((s) => s.subject === '회로이론').total).toBe(2);
   });
 });

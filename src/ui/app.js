@@ -1,4 +1,5 @@
-import { buildCatalog, getSession, listExams, listRounds, listYears, yearLabel } from '../lib/catalog.js';
+import { buildCatalog, getSession, listExams, listRounds, listYears, questionById, yearLabel } from '../lib/catalog.js';
+import { isMcqPickable, isUnscored } from '../lib/question.js';
 import { analyzeAttempts, wrongNoteItems } from '../lib/analysis.js';
 import { selectMockExam, MOCK_SIZES } from '../lib/mock-exam.js';
 import { frequentTopics, rankFrequent } from '../lib/frequent.js';
@@ -270,7 +271,7 @@ async function submitSession() {
   clearInterval(window.__eceTick);
   for (const q of sess.questions) {
     if (sess.grades[q.id]) continue;
-    if (q.exam === '필기' && q.format === 'mcq' && q.answer != null) {
+    if (isMcqPickable(q) && !isUnscored(q)) {
       const g = gradeMcq(q, sess.answers[q.id]);
       if (g) {
         sess.grades[q.id] = g;
@@ -455,9 +456,9 @@ function viewPlay() {
   if (!sess) return chrome(`${top('세션 없음', '#/')}<p>풀고 있는 문제가 없습니다.</p>`, { tab: 'exam' });
   const q = sess.questions[sess.index];
   if (!q) return chrome(`${top(sess.title, '#/exam')}<p>문항이 없습니다.</p>`, { tab: 'exam' });
+  const self = !isMcqPickable(q);
   const reveal =
-    sess.revealed[q.id] || (sess.immediate && sess.grades[q.id] && q.exam === '필기');
-  const self = q.exam === '실기' || q.answer == null || q.format !== 'mcq';
+    sess.revealed[q.id] || (sess.immediate && sess.grades[q.id] && !isUnscored(q));
   const timer =
     sess.timerOn && sess.remain != null
       ? `<span class="timer" data-testid="timer">${fmtTime(sess.remain)}</span>`
@@ -474,7 +475,14 @@ function viewPlay() {
         <button class="paper-link" type="button" data-act="submit" data-testid="submit-exam">채점</button>
       </div>
       <div class="exam-panes">
-        ${paperHtml({ session: sess, q, index: sess.index, reveal, self })}
+        ${paperHtml({
+          session: sess,
+          q,
+          index: sess.index,
+          reveal,
+          self,
+          allQuestions: state.data?.questions,
+        })}
         ${omrHtml(sess)}
       </div>
       <div class="exam-dock">
@@ -611,10 +619,12 @@ function viewWrong() {
             .map((it) => {
               const q = it.question;
               return `<article class="card note-item" data-qid="${esc(q.id)}">
-                <h3>${esc(q.subject || '')} · ${q.number ?? ''}번</h3>
+                <h3>${esc(q.subject || '')} · ${q.number ?? ''}번${
+                  it.similar ? ' <span class="paper-tag">비슷한 옛 기출</span>' : ''
+                }</h3>
                 ${kecBits(q)}
                 ${stemHtml(q)}
-                ${explainHtml(q)}
+                ${explainHtml(q, state.data.questions)}
                 <label class="field">메모
                   <textarea data-memo="${esc(q.id)}">${esc(it.memo)}</textarea>
                 </label>
@@ -752,7 +762,7 @@ async function onChoice(n) {
   if (!sess) return;
   const q = sess.questions[sess.index];
   sess.answers[q.id] = n;
-  if (!sess.immediate || q.exam !== '필기' || q.format !== 'mcq' || q.answer == null) {
+  if (!sess.immediate || !isMcqPickable(q) || isUnscored(q)) {
     render();
     return;
   }
@@ -817,6 +827,22 @@ async function onAct(act, node) {
   if (act === 'omr' && state.session) {
     state.session.index = Number(node.dataset.i);
     await onChoice(Number(node.dataset.choice));
+    return;
+  }
+  if (act === 'open-similar') {
+    const q = questionById(state.data?.questions || [], node.dataset.id);
+    if (!q) {
+      setToast('문항을 찾지 못했습니다');
+      return;
+    }
+    startSession({
+      questions: [q],
+      title: '비슷한 옛 기출',
+      exam: q.exam,
+      mode: 'similar',
+      immediate: isMcqPickable(q) && q.exam === '필기',
+      timer: false,
+    });
     return;
   }
   if (act === 'reveal' && state.session) {
